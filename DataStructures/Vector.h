@@ -3,76 +3,10 @@
 #include <string>
 #include <utility>
 #include <memory>
+#include "RawMemory.h"
 
 namespace ds
 {
-    template <typename T>
-    struct RawMemory
-    {
-    public:
-        RawMemory(size_t numElements)
-        {
-            _data = allocate(numElements);
-            _capacity = numElements;
-        }
-
-        RawMemory(const RawMemory& source) = delete;
-        
-        RawMemory& operator = (const RawMemory&) = delete;
-
-        RawMemory& operator = (RawMemory&& target)
-        {
-            swap(target);
-            target._capacity = 0;
-            return *this;
-        }
-
-        const T* operator + (size_t i) const
-        {
-            return _data + i;
-        }
-
-        const T& operator [] (size_t i) const
-        {
-            return _data[i];
-        }
-
-        size_t getCapacity() const
-        {
-            return _capacity;
-        }
-
-        T* getDataPtr()
-        {
-            return _data;
-        }
-
-        void swap(RawMemory& target) noexcept
-        {
-            std::swap(_data, target._data);
-            std::swap(_capacity, target._capacity);
-        }
-
-        ~RawMemory()
-        {
-            deallocate(_data);
-        }
-
-    private:
-        T* _data = nullptr;
-        size_t _capacity = 0;
-
-        static T* allocate(size_t numElements)
-        {
-            return static_cast<T*>(operator new(numElements * sizeof(T)));
-        }
-
-        static void deallocate(T* memoryPtr)
-        {
-            operator delete(memoryPtr);
-        }
-    };
-
     template <typename T>
     class Vector
     {
@@ -100,6 +34,41 @@ namespace ds
             std::destroy_n(_data.getDataPtr(), _count);
         }
 
+        Vector& operator = (const Vector& source)
+        {
+            auto resizeRequired = source._count > _data.getCapacity();
+            if (resizeRequired)
+            {
+                Vector sourceCopy(source);
+                swap(sourceCopy);
+                return *this;
+            }
+
+            // copy elements until min count
+            for (size_t minIndex = 0; minIndex < _count && minIndex < source._count; ++minIndex)
+            {
+                _data[minIndex] = source._data[minIndex];
+            }
+
+            // copy remainig elements
+            if (_count < source._count)
+            {
+                auto copyFrom = source._data.getDataPtr() + _count;
+                auto copyTo = _data.getDataPtr() + _count;
+                auto elementsCount = source._count - _count;
+                std::uninitialized_copy_n(copyFrom, elementsCount, copyTo);
+            }
+            // delete extra elements
+            else if (_count > source._count)
+            {
+                auto deleteFrom = _data.getDataPtr() + source._count;
+                auto elementsCount = _count - source._count;
+                std::destroy_n(deleteFrom, elementsCount);
+            }
+
+            return *this;
+        }
+
         Vector& operator = (Vector&& target)
         {
             std::cout << "operator = (Vector&& target), this = " << id << ", target = " << target.id << std::endl;
@@ -118,12 +87,50 @@ namespace ds
             return _data.getCapacity();
         }
         
+        void setResizeFactor(size_t value)
+        {
+            _resizeFactor = value;
+        }
+
+        void pushBack(const T& element)
+        {
+            prepareForNewElement();
+
+            new (_data + _count) T(element);
+            _count++;
+        }
+
         void pushBack(T&& element)
         {
-            if (_data.getCapacity() <= _size)
-            {
-                
-            }
+            prepareForNewElement();
+
+            new (_data + _count) T(std::move(element));
+            _count++;
+        }
+        
+        template <typename ... Args>
+        T& emplaceBack(Args&&... args)
+        {
+            prepareForNewElement();
+
+            auto result = new (_data + _count) T(std::forward<Args>(args)...);
+            _count++;
+            return *result;
+        }
+
+        void removeAt(size_t index)
+        {
+            // TODO
+        }
+
+        void popBack()
+        {
+            // TODO
+        }
+
+        void shrinkToCount()
+        {
+            // TODO:
         }
 
         void reserve(size_t capacity)
@@ -156,6 +163,7 @@ namespace ds
     private:
         size_t _count = 0;
         RawMemory<T> _data;
+        size_t _resizeFactor = 2;
 
         static void Construct(void* data)
         {
@@ -181,6 +189,15 @@ namespace ds
         {
             _data.swap(target._data);
             std::swap(_count, target._count);
+        }
+
+        void prepareForNewElement()
+        {
+            if (_count == _data.getCapacity())
+            {
+                auto newCapacity = (_count == 0) ? 1 : _count * _resizeFactor;
+                reserve(newCapacity);
+            }
         }
     };
 }

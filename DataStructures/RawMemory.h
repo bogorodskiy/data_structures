@@ -8,10 +8,10 @@ namespace ds
     struct RawMemory
     {
     public:
-        RawMemory(size_t numElements)
+        RawMemory(size_t capacity = InitialCapacity)
         {
-            _data = allocate(numElements);
-            _capacity = numElements;
+            _data = allocate(capacity);
+            _capacity = capacity;
         }
 
         RawMemory(const RawMemory& source) = delete;
@@ -25,14 +25,24 @@ namespace ds
             return *this;
         }
 
-        const T* operator + (size_t i) const
+        T* operator + (size_t index)
         {
-            return _data + i;
+            return _data + index;
         }
 
-        const T& operator [] (size_t i) const
+        const T* operator + (size_t index) const
         {
-            return _data[i];
+            return _data + index;
+        }
+
+        T& operator [] (size_t index)
+        {
+            return _data[index];
+        }
+
+        const T& operator [] (size_t index) const
+        {
+            return _data[index];
         }
 
         size_t getCapacity() const
@@ -51,12 +61,21 @@ namespace ds
             std::swap(_capacity, target._capacity);
         }
 
+        void clear()
+        {
+            deallocate(_data);
+            
+            _data = allocate(InitialCapacity);
+            _capacity = InitialCapacity;
+        }
+
         ~RawMemory()
         {
             deallocate(_data);
         }
 
     private:
+        const int InitialCapacity = 1;
         T* _data = nullptr;
         size_t _capacity = 0;
 

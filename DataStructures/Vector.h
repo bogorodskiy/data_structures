@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 #include <memory>
+#include <exception>
 #include "RawMemory.h"
 
 namespace ds
@@ -14,7 +15,7 @@ namespace ds
         // TODO: remove test
         int id = 0;
 
-        explicit Vector(size_t capacity) : _data(capacity)
+        explicit Vector(size_t capacity = 1) : _data(capacity)
         {
         }
 
@@ -69,12 +70,22 @@ namespace ds
             return *this;
         }
 
-        Vector& operator = (Vector&& target)
+        Vector& operator = (Vector&& target) noexcept
         {
             std::cout << "operator = (Vector&& target), this = " << id << ", target = " << target.id << std::endl;
             swap(target);
             target._count = 0;
             return *this;
+        }
+
+        // iterators
+        T* begin() 
+        {
+            return _data.getDataPtr();
+        }
+        T* end()
+        {
+            return _data.getDataPtr() + _count;
         }
 
         size_t getCount() const
@@ -118,22 +129,25 @@ namespace ds
             return *result;
         }
 
-        void removeAt(size_t index)
-        {
-            // TODO
-        }
-
         void popBack()
         {
-            // TODO
+            if (_count == 0)
+            {
+                throw std::exception("Unable to popBack from vector, vector is empty");
+            }
+
+            std::destroy_n(_data.getDataPtr() + _count - 1, 1);
+            _count--;
         }
 
-        void shrinkToCount()
+        void clear()
         {
-            // TODO:
+            std::destroy_n(_data.getDataPtr(), _count);
+            _data.clear();
+            _count = 0;
         }
 
-        void reserve(size_t capacity)
+        void reserve(const size_t capacity)
         {
             if (_data.getCapacity() >= capacity)
             {
@@ -147,12 +161,10 @@ namespace ds
             constexpr bool tMoveCtorThrows = !noexcept(T(std::declval<T>()));
             if constexpr (tMoveCtorThrows)
             {
-                std::cout << "reserve copy" << std::endl;
                 std::uninitialized_copy_n(_data.getDataPtr(), _count, newData.getDataPtr());
             }
             else
             {
-                std::cout << "reserve move" << std::endl;
                 std::uninitialized_move_n(_data.getDataPtr(), _count, newData.getDataPtr());
             }
 

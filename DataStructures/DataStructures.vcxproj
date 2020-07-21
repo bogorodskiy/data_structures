@@ -142,8 +142,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DataStructures.cpp" />
-    <ClCompile Include="Dictionary.cpp" />
-    <ClCompile Include="Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Dictionary.h" />

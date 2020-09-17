@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include "Vector.h"
+#include "Map.h"
 
 class Thrower
 {
@@ -37,16 +38,30 @@ int main()
     ds::Vector<Thrower> v1(1);
     v1.id = 1;
     
-    //v1.emplaceBack(1);
-    //v1.pushBack(1);
-    v1.emplaceBack(Thrower(11));
-    v1.emplaceBack(Thrower(111));
-    v1.emplaceBack(Thrower(1111));
-    v1.clear();
-    //v1.emplaceBack(Thrower(11111));
+    ds::Map<int, int> map;
+    map.add(0, 10);
+    map.add(1, 11);
+    map.add(2, 12);
+    map.add(3, 13);
+    map.add(4, 14);
+    map.add(5, 15);
+    map.add(6, 16);
+    map.add(7, 17);
+    map.add(8, 18);
+    map.add(9, 19);
 
-    //std::vector<Thrower> v2;
-    //v2.reserve(3);
-    //v2.emplace_back(1);
-    //v2.push_back(1);
+    map.printRaw();
+
+
+
+    map[3] = 777;
+    std::cout << map[3] << std::endl;
+
+    std::cout << map.contains(4) << std::endl;
+    std::cout << map.contains(-1) << std::endl;
+
+    map.removeAll();
+
+    std::vector<int> vec;
+    vec.begin();
 }
